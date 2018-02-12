@@ -10,6 +10,7 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -27,15 +28,16 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
-public class Exp1 {
+public class Exp2 {
 
 	public static void main(String[] args) throws Exception {
 
 		// Change following paths accordingly
-		String input = "/cpre419/patents.txt"; 
-		String temp1 = "/user/jkuczek/lab3/exp1/temp1";
-		String temp2 = "/user/jkuczek/lab3/exp1/temp2";
-		String output = "/user/jkuczek/lab3/exp1/output/"; 
+		String input = "/user/jkuczek/input"; 
+		//String input = "/cpre419/patents.txt"; 
+		String temp1 = "/user/jkuczek/lab3/exp2/temp1";
+		//String temp2 = "/user/jkuczek/lab3/exp2/temp2";
+		String output = "/user/jkuczek/lab3/exp2/output/"; 
 
 		// The number of reduce tasks 
 		int reduce_tasks = 1; 
@@ -46,7 +48,7 @@ public class Exp1 {
 		Job job_one = Job.getInstance(conf, "Graph Program Round One");
 
 		// Attach the job to this Exp1
-		job_one.setJarByClass(Exp1.class);
+		job_one.setJarByClass(Exp2.class);
 
 		// The datatype of the mapper output Key, Value
 		job_one.setMapOutputKeyClass(Text.class);
@@ -54,13 +56,13 @@ public class Exp1 {
 
 		// The datatype of the reducer output Key, Value
 		job_one.setOutputKeyClass(Text.class);
-		job_one.setOutputValueClass(IntWritable.class);
+		job_one.setOutputValueClass(Text.class);
 
 		// The class that provides the map method
-		job_one.setMapperClass(Map_One.class);
+		job_one.setMapperClass(Exp2_Map_One.class);
 
 		// The class that provides the reduce method
-		job_one.setReducerClass(Reduce_One.class);
+		job_one.setReducerClass(Exp2_Reduce_One.class);
 
 		// Decides how the input will be split
 		// We are using TextInputFormat which splits the data line by line
@@ -80,14 +82,6 @@ public class Exp1 {
 		// This must not be shared with other running jobs in the system
 		FileOutputFormat.setOutputPath(job_one, new Path(temp1));
 		
-		// Set the Combiner class
-		// The combiner class reduces the mapper output locally. This helps in
-		// reducing communication time as reducers get only one tuple per key
-		// per mapper. For this example, the Reduce logic is good enough as the
-		// combiner logic. Hence we use the same class.
-		// However, this is not neccessary and you can write separate Combiner class.
-		job_one.setCombinerClass(Reduce_One.class);
-		
 		// Run the job
 		job_one.waitForCompletion(true);
 
@@ -95,75 +89,59 @@ public class Exp1 {
 		// The output of the previous job can be passed as the input to the next
 		// The steps are as in job 1
 		Job job_two = Job.getInstance(conf, "Graph Program Round Two");
-		job_two.setJarByClass(Exp1.class);
-		//job_two.setNumReduceTasks(reduce_tasks);
+		job_two.setJarByClass(Exp2.class);
+		job_two.setNumReduceTasks(reduce_tasks);
 
 		// Should be match with the output datatype of mapper and reducer
 		job_two.setMapOutputKeyClass(Text.class);
-		job_two.setMapOutputValueClass(IntWritable.class);
-		job_two.setOutputKeyClass(IntWritable.class);
+		job_two.setMapOutputValueClass(Text.class);
+		job_two.setOutputKeyClass(Text.class);
 		job_two.setOutputValueClass(Text.class);
-		
+
 		// If required the same Map / Reduce classes can also be used
 		// Will depend on logic if separate Map / Reduce classes are needed
 		// Here we show separate ones
-		job_two.setMapperClass(Map_Two.class);
-		job_two.setReducerClass(Reduce_Two.class);
+		job_two.setMapperClass(Exp2_Map_Two.class);
+		job_two.setReducerClass(Exp2_Reduce_Two.class);
 				
 		job_two.setInputFormatClass(TextInputFormat.class);
 		job_two.setOutputFormatClass(TextOutputFormat.class);
 		
 		// The output of previous job set as input of the next
 		FileInputFormat.addInputPath(job_two, new Path(temp1));
-		FileOutputFormat.setOutputPath(job_two, new Path(temp2));
-
-		// Set the Combiner class
-		// The combiner class reduces the mapper output locally. This helps in
-		// reducing communication time as reducers get only one tuple per key
-		// per mapper. For this example, the Reduce logic is good enough as the
-		// combiner logic. Hence we use the same class.
-		// However, this is not neccessary and you can write separate Combiner class.
-		job_two.setCombinerClass(Reduce_Two.class);
+		FileOutputFormat.setOutputPath(job_two, new Path(output));
 
 		// Run the job
 		job_two.waitForCompletion(true);
-		
-		// Create job for round 3
-		// The output of the previous job can be passed as the input to the next
-		// The steps are as in job 1
-		Job job_three = Job.getInstance(conf, "Graph Program Round Three");
-		job_three.setJarByClass(Exp1.class);
-		job_three.setNumReduceTasks(reduce_tasks);
-
-		// Should be match with the output datatype of mapper and reducer
-		job_three.setMapOutputKeyClass(IntWritable.class);
-		job_three.setMapOutputValueClass(Text.class);
-		job_three.setOutputKeyClass(Text.class);
-		job_three.setOutputValueClass(Text.class);
-
-		// If required the same Map / Reduce classes can also be used
-		// Will depend on logic if separate Map / Reduce classes are needed
-		// Here we show separate ones
-		job_three.setMapperClass(Map_Three.class);
-		job_three.setReducerClass(Reduce_Three.class);
-				
-		job_three.setInputFormatClass(TextInputFormat.class);
-		job_three.setOutputFormatClass(TextOutputFormat.class);
-		
-		// The output of previous job set as input of the next
-		FileInputFormat.addInputPath(job_three, new Path(temp2));
-		FileOutputFormat.setOutputPath(job_three, new Path(output));
-		
-		// Set the Combiner class
-		// The combiner class reduces the mapper output locally. This helps in
-		// reducing communication time as reducers get only one tuple per key
-		// per mapper. For this example, the Reduce logic is good enough as the
-		// combiner logic. Hence we use the same class.
-		// However, this is not neccessary and you can write separate Combiner class.
-		job_three.setCombinerClass(Reduce_Three.class);
-
-		// Run the job
-		job_three.waitForCompletion(true);
+//		
+//		// Create job for round 3
+//		// The output of the previous job can be passed as the input to the next
+//		// The steps are as in job 1
+//		Job job_three = Job.getInstance(conf, "Graph Program Round Three");
+//		job_three.setJarByClass(Exp1.class);
+//		job_three.setNumReduceTasks(reduce_tasks);
+//
+//		// Should be match with the output datatype of mapper and reducer
+//		job_three.setMapOutputKeyClass(IntWritable.class);
+//		job_three.setMapOutputValueClass(Text.class);
+//		job_three.setOutputKeyClass(Text.class);
+//		job_three.setOutputValueClass(Text.class);
+//
+//		// If required the same Map / Reduce classes can also be used
+//		// Will depend on logic if separate Map / Reduce classes are needed
+//		// Here we show separate ones
+//		job_three.setMapperClass(Map_Three.class);
+//		job_three.setReducerClass(Reduce_Three.class);
+//				
+//		job_three.setInputFormatClass(TextInputFormat.class);
+//		job_three.setOutputFormatClass(TextOutputFormat.class);
+//		
+//		// The output of previous job set as input of the next
+//		FileInputFormat.addInputPath(job_three, new Path(temp2));
+//		FileOutputFormat.setOutputPath(job_three, new Path(output));
+//
+//		// Run the job
+//		job_three.waitForCompletion(true);
 	}// end function main
 
 	// The Map Class
@@ -177,7 +155,7 @@ public class Exp1 {
 	// The map method can emit data using context.write() method
 	// However, to match the class declaration, it must emit Text as key and
 	// IntWribale as value
-	public static class Map_One extends Mapper<LongWritable, Text, Text, Text> {
+	public static class Exp2_Map_One extends Mapper<LongWritable, Text, Text, Text> {
 		
 		private Text w1 = new Text();
 		private Text w2 = new Text();
@@ -193,16 +171,13 @@ public class Exp1 {
 			StringTokenizer tokens = new StringTokenizer(line);
 
 			while (tokens.hasMoreTokens()) {
-				String v1 = tokens.nextToken();
-				String v2 = tokens.nextToken();
-				if(v1 != v2) {
-					// separate the input so we have two lists
-					// each vertex will be mapped to a list of incoming and outgoing edges
-					w1.set(v1);
-					w2.set(v2);
-					context.write(w2, new Text("I" + w1));
-					context.write(w1, new Text("O" + w2));
-				}// end if the two vertices are equal
+				w1.set(tokens.nextToken());
+				w2.set(tokens.nextToken());
+				
+				if(!w1.equals(w2)) {
+					context.write(w1, w2);
+					context.write(w2, w1);
+				}// end if two vertices are not equal
 			} // End while
 		}// end function map 
 	}// end class Map_One
@@ -212,93 +187,91 @@ public class Exp1 {
 	// method
 	// The value is IntWritable and also must match the datatype of the output
 	// value of the map method
-	public static class Reduce_One extends Reducer<Text, Text, Text, Text> {
+	public static class Exp2_Reduce_One extends Reducer<Text, Text, Text, Text> {
+		
+		private Text w1 = new Text();
+		private Text w2 = new Text();
 		
 		// The reduce method
 		// For key, we have an Iterable over all values associated with this key
 		// The values come in a sorted fasion.
 		public void reduce(Text key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
-			
-			String incoming = "N";
-			String outgoing = "N";
-			for (Text val : values) {
-				String value = val.toString();
-				if(value.charAt(0) == 'O') {
-					// this is an outgoing value
-					outgoing += value.substring(1) + ",";
-				}else {
-					// this is an incoming value
-					incoming += value.substring(1) + ",";
-				}// end if outgoing value
-			}// end for loop computing frequency
-			
-			// remove the trailing commas from both lists
-			incoming = removeLast(incoming);
-			outgoing = removeLast(outgoing);
-			
-			// output the vertex and both lists to the next mapper
-			context.write(key, new Text(incoming+"-"+outgoing));
+			w1.set(key);
+			w2.set(toList(values));
+			context.write(w1, w2);
 		}// end function reduce
 		
-		private String removeLast(String s) {
-			if(s.length() > 1) {
-				// remove the last comma in the string
-				return s.substring(0, s.length() - 1);
-			}else {
-				return s;
-			}// end if string length > 0
-		}// end function removeTrailingComma
+		public String toList(Iterable<Text> values) {
+			String result = "";
+			for(Text value : values) {
+				result += value + ",";
+			}// end foreach loop over values
+			return result.substring(0, result.length()-1);
+		}// end function toList
+		
 	}// end class Reduce_One
 
 	// The second Map Class
-    public static class Map_Two extends Mapper<LongWritable, Text, Text, IntWritable> {
+    public static class Exp2_Map_Two extends Mapper<LongWritable, Text, Text, Text> {
     			
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-        	// output from the reduce method is tab delimitted       	
+        	// output from the reduce method is tab delimitted
         	String[] data = value.toString().split("\t");
-        	        	
-        	// further parse the output from first reduce
+ 
+        	// pull relevant vertex data from input
         	String vertex = data[0];
-        	String[] vertices = data[1].split("-");
-        
-        	// convert comma separated strings into ArrayLists
-        	// we now have the incoming and outgoing vertices in two ArrayLists
-        	ArrayList<String> incoming = convert(vertices[0]);
-        	ArrayList<String> outgoing = convert(vertices[1]);
+        	ArrayList<String> neighbors = toList(data[1]);
         	
-        	for(String v : outgoing) {
-        		// count all the two-hops
-        		context.write(new Text(v), new IntWritable(incoming.size()));
-        	}// end foreach loop over all outgoing edges
+        	for(int i = 0; i < neighbors.size(); i++) {
+        		// loop through the neighbor list
+        		String v = neighbors.get(i);
+        		context.write(new Text(v), new Text(vertex+"-"+String.join(",", neighbors)));
+        	}// end for loop over all neighbors
         	
-        	// count all the one-hops
-        	context.write(new Text(vertex), new IntWritable(incoming.size()));        	
         } // end function map
         
-        private ArrayList<String> convert(String s){
-        	if(s.length() > 1) {
-        		s = s.substring(1, s.length());
-        		return new ArrayList<String>(Arrays.asList(s.split(",")));
-        	}else {
-        		return new ArrayList<String>();
-        	}// end if length > 1
+        private ArrayList<String> toList(String s) {
+        	ArrayList<String> list = new ArrayList<String>(Arrays.asList(s.split(",")));
+        	Collections.sort(list);
+        	return list;
         }// end function convert
+        
     }// end class Map_Two
 
     // The second Reduce class
-    public static class Reduce_Two extends Reducer<Text, IntWritable, IntWritable, Text> {
+    public static class Exp2_Reduce_Two extends Reducer<Text, Text, Text, Text> {
 		
-        public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-            for (IntWritable count : values) {
-            	context.write(count, key);
-            }// end for loop adding all elements to priority queue
+        public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        	System.out.print("\nVertex: " + key);
+        	
+        	for(Text value : values) {
+        		// parse the input data from Map_Two
+        		String[] data = value.toString().split("-");
+        		String vertex = data[0];
+        		ArrayList<String> neighbors = toList(data[1]);
+        		
+        		System.out.println("\nKEY: " + vertex);
+        		System.out.print("VALUES: ");
+        		for(String v : neighbors) {
+        			if(!v.equals(key.toString())) {
+        				System.out.print(v);
+        			}// end if vertex not equal (don't include duplicates
+        		}// end for loop over all 
+        		
+        	}// end foreach loop over values
         }// end function reduce
+        
+        private ArrayList<String> toList(String s) {
+        	ArrayList<String> list = new ArrayList<String>(Arrays.asList(s.split(",")));
+        	Collections.sort(list);
+        	return list;
+        }// end function convert
         
     }// end class Reduce_Two
     
     // The third Map Class
-    public static class Map_Three extends Mapper<LongWritable, Text, IntWritable, Text> {
+    public static class Exp2_Map_Three extends Mapper<LongWritable, Text, IntWritable, Text> {
     			
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         	// output from the reduce method is tab delimitted
@@ -310,7 +283,7 @@ public class Exp1 {
     }// end class Map_Three
     
     // The third Reduce class
-    public static class Reduce_Three extends Reducer<IntWritable, Text, IntWritable, Text> {
+    public static class Exp2_Reduce_Three extends Reducer<IntWritable, Text, IntWritable, Text> {
     	
     	private Text word = new Text();
     	LinkedHashMap<Integer, String> queue = new LinkedHashMap<Integer, String>()
@@ -326,12 +299,13 @@ public class Exp1 {
 		
         public void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
         	// add elements to the queue, since reduce sorts by key in ascending order,
-        	// the last items to be added to the queue will be the top 10 most significant patents
+        	// the last items to be added to the queue will be the top 10 bigrams
             for (Text val : values) {
             	if(val != null) {
             		queue.put(new Integer(key.get()), val.toString());
             	}// end if value is not null
             }// end for loop adding all elements to priority queue
+        	//context.write(null, new Text("test"));
         }// end function reduce
       
         @Override

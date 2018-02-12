@@ -80,14 +80,6 @@ public class Exp1 {
 		// This must not be shared with other running jobs in the system
 		FileOutputFormat.setOutputPath(job_one, new Path(temp1));
 		
-		// Set the Combiner class
-		// The combiner class reduces the mapper output locally. This helps in
-		// reducing communication time as reducers get only one tuple per key
-		// per mapper. For this example, the Reduce logic is good enough as the
-		// combiner logic. Hence we use the same class.
-		// However, this is not neccessary and you can write separate Combiner class.
-		job_one.setCombinerClass(Reduce_One.class);
-		
 		// Run the job
 		job_one.waitForCompletion(true);
 
@@ -117,14 +109,6 @@ public class Exp1 {
 		FileInputFormat.addInputPath(job_two, new Path(temp1));
 		FileOutputFormat.setOutputPath(job_two, new Path(temp2));
 
-		// Set the Combiner class
-		// The combiner class reduces the mapper output locally. This helps in
-		// reducing communication time as reducers get only one tuple per key
-		// per mapper. For this example, the Reduce logic is good enough as the
-		// combiner logic. Hence we use the same class.
-		// However, this is not neccessary and you can write separate Combiner class.
-		job_two.setCombinerClass(Reduce_Two.class);
-
 		// Run the job
 		job_two.waitForCompletion(true);
 		
@@ -153,14 +137,6 @@ public class Exp1 {
 		// The output of previous job set as input of the next
 		FileInputFormat.addInputPath(job_three, new Path(temp2));
 		FileOutputFormat.setOutputPath(job_three, new Path(output));
-		
-		// Set the Combiner class
-		// The combiner class reduces the mapper output locally. This helps in
-		// reducing communication time as reducers get only one tuple per key
-		// per mapper. For this example, the Reduce logic is good enough as the
-		// combiner logic. Hence we use the same class.
-		// However, this is not neccessary and you can write separate Combiner class.
-		job_three.setCombinerClass(Reduce_Three.class);
 
 		// Run the job
 		job_three.waitForCompletion(true);

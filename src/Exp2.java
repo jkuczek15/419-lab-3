@@ -11,13 +11,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -33,10 +32,10 @@ public class Exp2 {
 	public static void main(String[] args) throws Exception {
 
 		// Change following paths accordingly
-		String input = "/user/jkuczek/input"; 
-		//String input = "/cpre419/patents.txt"; 
+		//String input = "/user/jkuczek/input"; 
+		String input = "/cpre419/patents.txt"; 
 		String temp1 = "/user/jkuczek/lab3/exp2/temp1";
-		//String temp2 = "/user/jkuczek/lab3/exp2/temp2";
+		String temp2 = "/user/jkuczek/lab3/exp2/temp2";
 		String output = "/user/jkuczek/lab3/exp2/output/"; 
 
 		// The number of reduce tasks 
@@ -59,10 +58,10 @@ public class Exp2 {
 		job_one.setOutputValueClass(Text.class);
 
 		// The class that provides the map method
-		job_one.setMapperClass(Exp2_Map_One.class);
+		job_one.setMapperClass(Map_One.class);
 
 		// The class that provides the reduce method
-		job_one.setReducerClass(Exp2_Reduce_One.class);
+		job_one.setReducerClass(Reduce_One.class);
 
 		// Decides how the input will be split
 		// We are using TextInputFormat which splits the data line by line
@@ -101,47 +100,47 @@ public class Exp2 {
 		// If required the same Map / Reduce classes can also be used
 		// Will depend on logic if separate Map / Reduce classes are needed
 		// Here we show separate ones
-		job_two.setMapperClass(Exp2_Map_Two.class);
-		job_two.setReducerClass(Exp2_Reduce_Two.class);
+		job_two.setMapperClass(Map_Two.class);
+		job_two.setReducerClass(Reduce_Two.class);
 				
 		job_two.setInputFormatClass(TextInputFormat.class);
 		job_two.setOutputFormatClass(TextOutputFormat.class);
 		
 		// The output of previous job set as input of the next
 		FileInputFormat.addInputPath(job_two, new Path(temp1));
-		FileOutputFormat.setOutputPath(job_two, new Path(output));
+		FileOutputFormat.setOutputPath(job_two, new Path(temp2));
 
 		// Run the job
 		job_two.waitForCompletion(true);
-//		
-//		// Create job for round 3
-//		// The output of the previous job can be passed as the input to the next
-//		// The steps are as in job 1
-//		Job job_three = Job.getInstance(conf, "Graph Program Round Three");
-//		job_three.setJarByClass(Exp1.class);
-//		job_three.setNumReduceTasks(reduce_tasks);
-//
-//		// Should be match with the output datatype of mapper and reducer
-//		job_three.setMapOutputKeyClass(IntWritable.class);
-//		job_three.setMapOutputValueClass(Text.class);
-//		job_three.setOutputKeyClass(Text.class);
-//		job_three.setOutputValueClass(Text.class);
-//
-//		// If required the same Map / Reduce classes can also be used
-//		// Will depend on logic if separate Map / Reduce classes are needed
-//		// Here we show separate ones
-//		job_three.setMapperClass(Map_Three.class);
-//		job_three.setReducerClass(Reduce_Three.class);
-//				
-//		job_three.setInputFormatClass(TextInputFormat.class);
-//		job_three.setOutputFormatClass(TextOutputFormat.class);
-//		
-//		// The output of previous job set as input of the next
-//		FileInputFormat.addInputPath(job_three, new Path(temp2));
-//		FileOutputFormat.setOutputPath(job_three, new Path(output));
-//
-//		// Run the job
-//		job_three.waitForCompletion(true);
+
+		// Create job for round 3
+		// The output of the previous job can be passed as the input to the next
+		// The steps are as in job 1
+		Job job_three = Job.getInstance(conf, "Graph Program Round Three");
+		job_three.setJarByClass(Exp1.class);
+		job_three.setNumReduceTasks(reduce_tasks);
+
+		// Should be match with the output datatype of mapper and reducer
+		job_three.setMapOutputKeyClass(Text.class);
+		job_three.setMapOutputValueClass(Text.class);
+		job_three.setOutputKeyClass(Text.class);
+		job_three.setOutputValueClass(Text.class);
+
+		// If required the same Map / Reduce classes can also be used
+		// Will depend on logic if separate Map / Reduce classes are needed
+		// Here we show separate ones
+		job_three.setMapperClass(Map_Three.class);
+		job_three.setReducerClass(Reduce_Three.class);
+				
+		job_three.setInputFormatClass(TextInputFormat.class);
+		job_three.setOutputFormatClass(TextOutputFormat.class);
+		
+		// The output of previous job set as input of the next
+		FileInputFormat.addInputPath(job_three, new Path(temp2));
+		FileOutputFormat.setOutputPath(job_three, new Path(output));
+
+		// Run the job
+		job_three.waitForCompletion(true);
 	}// end function main
 
 	// The Map Class
@@ -155,7 +154,7 @@ public class Exp2 {
 	// The map method can emit data using context.write() method
 	// However, to match the class declaration, it must emit Text as key and
 	// IntWribale as value
-	public static class Exp2_Map_One extends Mapper<LongWritable, Text, Text, Text> {
+	public static class Map_One extends Mapper<LongWritable, Text, Text, Text> {
 		
 		private Text w1 = new Text();
 		private Text w2 = new Text();
@@ -187,7 +186,7 @@ public class Exp2 {
 	// method
 	// The value is IntWritable and also must match the datatype of the output
 	// value of the map method
-	public static class Exp2_Reduce_One extends Reducer<Text, Text, Text, Text> {
+	public static class Reduce_One extends Reducer<Text, Text, Text, Text> {
 		
 		private Text w1 = new Text();
 		private Text w2 = new Text();
@@ -213,7 +212,7 @@ public class Exp2 {
 	}// end class Reduce_One
 
 	// The second Map Class
-    public static class Exp2_Map_Two extends Mapper<LongWritable, Text, Text, Text> {
+    public static class Map_Two extends Mapper<LongWritable, Text, Text, Text> {
     			
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         	// output from the reduce method is tab delimitted
@@ -240,94 +239,102 @@ public class Exp2 {
     }// end class Map_Two
 
     // The second Reduce class
-    public static class Exp2_Reduce_Two extends Reducer<Text, Text, Text, Text> {
-		
+    public static class Reduce_Two extends Reducer<Text, Text, Text, Text> {
+    	
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-        	System.out.print("\nVertex: " + key);
+        	String v1 = key.toString();
+        	HashSet<String> neighbors = new HashSet<String>();
+        	HashMap<String, HashSet<String>> neighborMap = new HashMap<String, HashSet<String>>();
         	
         	for(Text value : values) {
         		// parse the input data from Map_Two
         		String[] data = value.toString().split("-");
-        		String vertex = data[0];
-        		ArrayList<String> neighbors = toList(data[1]);
-        		
-        		System.out.println("\nKEY: " + vertex);
-        		System.out.print("VALUES: ");
-        		for(String v : neighbors) {
-        			if(!v.equals(key.toString())) {
-        				System.out.print(v);
-        			}// end if vertex not equal (don't include duplicates
-        		}// end for loop over all 
-        		
+        		String v2 = data[0];
+        		neighbors = toSet(v1, data[1]);
+        		neighborMap.put(v2, neighbors);
         	}// end foreach loop over values
+        	
+        	int triangles = 0;
+        	int triplets = 0;
+        	for(String k : neighborMap.keySet()){
+        		neighbors = neighborMap.get(k);
+        		if(!k.equals(v1)){
+            		for(String edgeNode : neighbors){
+            			if(neighborMap.containsKey(edgeNode)){
+            				triangles++;
+            			}// end if we found a triangle
+            			triplets++;
+            		}// end for loop over all neighbors
+        		}// end if unique vertex key
+        	}// end for loop over all keys
+        	
+        	context.write(new Text(v1), new Text(triangles+","+triplets));
         }// end function reduce
         
-        private ArrayList<String> toList(String s) {
-        	ArrayList<String> list = new ArrayList<String>(Arrays.asList(s.split(",")));
-        	Collections.sort(list);
-        	return list;
+        private HashSet<String> toSet(String toRemove, String s) {
+        	HashSet<String> values = new HashSet<String>();
+        	StringTokenizer st = new StringTokenizer(s, ",");
+        	
+        	while(st.hasMoreTokens()){
+        		String token = st.nextToken();
+        		if(!token.equals(toRemove)){
+        			values.add(token);	
+        		}// end if we dont want to add this token	
+        	}// end while there are more token
+        	return values;
         }// end function convert
         
     }// end class Reduce_Two
     
     // The third Map Class
-    public static class Exp2_Map_Three extends Mapper<LongWritable, Text, IntWritable, Text> {
+    public static class Map_Three extends Mapper<LongWritable, Text, Text, Text> {
     			
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         	// output from the reduce method is tab delimitted
         	String[] data = value.toString().split("\t");
-        	IntWritable count = new IntWritable(Integer.parseInt(data[0]));
-        	context.write(count, new Text(data[1]));
+        	// pass all counts to reduce
+        	context.write(new Text("1"), new Text(data[1]));
         } // end function map
         
     }// end class Map_Three
     
     // The third Reduce class
-    public static class Exp2_Reduce_Three extends Reducer<IntWritable, Text, IntWritable, Text> {
+    public static class Reduce_Three extends Reducer<Text, Text, Text, Text> {
     	
-    	private Text word = new Text();
-    	LinkedHashMap<Integer, String> queue = new LinkedHashMap<Integer, String>()
-        {
-		   static final long serialVersionUID=42L;
-		   
-           @Override
-           protected boolean removeEldestEntry(Map.Entry<Integer, String> eldest)
-           {
-              return this.size() > 10;   
-           }
-        };
-		
-        public void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
         	// add elements to the queue, since reduce sorts by key in ascending order,
         	// the last items to be added to the queue will be the top 10 bigrams
+        	int totalTriangles = 0;
+        	int totalTriplets = 0;
             for (Text val : values) {
-            	if(val != null) {
-            		queue.put(new Integer(key.get()), val.toString());
-            	}// end if value is not null
+            	String[] counts = val.toString().split(",");
+            	
+            	// parse the triplets and triangles
+            	String triangles = counts[0];
+            	String triplets = counts[1];
+            	
+            	// sum the total triangles and triplets
+            	totalTriangles += Integer.parseInt(triangles);
+            	totalTriplets += Integer.parseInt(triplets);
             }// end for loop adding all elements to priority queue
-        	//context.write(null, new Text("test"));
+            
+            String result = "";
+            
+            // we count each triangle three times per point so we must divide by 6 
+            // to get actual number of triangles
+            totalTriangles = totalTriangles / 6;
+            totalTriplets = totalTriplets / 2;
+            
+            // calculate gcc
+            // create the result output
+            double gcc = (double) (3 * totalTriangles) / totalTriplets;
+            result += "GCC: " + gcc + "\r\n";
+            result += "Triangles: " + totalTriangles + "\r\n";
+            result += "Triplets: " + totalTriplets + "\r\n";
+            
+            context.write(null, new Text(result));
         }// end function reduce
       
-        @Override
-        public void cleanup(Context context) throws IOException, InterruptedException {
-      	  // print out the contexts of the queue once the task is complete
-      	  String result = "";
-      	  int i = 9;
-      	  String[] s = new String[10];
-      	
-          for (Integer count : queue.keySet()){
-          	String vertex = queue.get(count).toString();
-          	s[i--] = "Patent: " + vertex + " - Significance: " + count + "\r\n";  
-          }// end for loop over the LinkedHashMap
-          
-          for(i = 0; i < 10; i++) {
-          	result += i+1 + ": " + s[i];
-          }// end for loop printing out results 
-          
-          word.set(result);
-          context.write(null, word);
-        }// end cleanup function
-        
     }// end class Reduce_Three
 
 }// end class Exp1
